@@ -175,3 +175,40 @@
 @media (min-width: 1080px) {
   .nav__backend-badge { display: inline-flex; }
 }
+
+.nav__login { white-space: nowrap; }
+
+.nav__account {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav__account-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  padding: 7px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.nav__account-logout {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-faint);
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+}
+.nav__account-logout:hover { color: var(--accent); border-color: var(--accent); }
+
+@media (max-width: 860px) {
+  .nav__account { margin-top: 14px; width: 100%; justify-content: space-between; }
+  .nav__account-badge { flex: 1; }
+  .nav__login { margin-top: 14px; }
+}

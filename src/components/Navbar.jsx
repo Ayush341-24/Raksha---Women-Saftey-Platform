@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { ShieldHalf, Menu, X, ChevronDown } from 'lucide-react';
+import { ShieldHalf, Menu, X, ChevronDown, LogOut, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './Navbar.css';
 
@@ -8,7 +8,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { sosActive, backendOnline } = useApp();
+  const { sosActive, backendOnline, auth, logout } = useApp();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -73,6 +73,22 @@ export default function Navbar() {
               'Activate SOS'
             )}
           </Link>
+
+          {auth ? (
+            <div className="nav__account">
+              <span className="nav__account-badge" title={auth.email}>
+                {auth.role === 'admin' ? <ShieldCheck size={13} /> : <UserIcon size={13} />}
+                {auth.name}
+              </span>
+              <button className="nav__account-logout" onClick={() => { logout(); setOpen(false); }} aria-label="Log out">
+                <LogOut size={14} />
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="nav__link nav__login" onClick={() => setOpen(false)}>
+              Log in
+            </Link>
+          )}
         </nav>
 
         <button className="nav__burger" onClick={() => setOpen((o) => !o)} aria-label="Toggle menu">

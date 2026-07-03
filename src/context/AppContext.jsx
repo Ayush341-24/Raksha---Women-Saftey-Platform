@@ -28,6 +28,7 @@ export function AppProvider({ children }) {
   const [contacts, setContacts]   = useState(() => loadJSON('wsap_contacts', DEFAULT_CONTACTS));
   const [history, setHistory]     = useState(() => loadJSON('wsap_history', []));
   const [settings, setSettings]   = useState(() => loadJSON('wsap_settings', DEFAULT_SETTINGS));
+  const [auth, setAuth]           = useState(() => loadJSON('wsap_auth', null));
   const [sosActive, setSosActive] = useState(false);
   const [sosStartedAt, setSosStartedAt] = useState(null);
   const [location, setLocation]   = useState({ lat: 28.6139, lng: 77.2090, label: 'Connaught Place, New Delhi', live: false, accuracy: null });
@@ -45,22 +46,38 @@ export function AppProvider({ children }) {
   useEffect(() => { localStorage.setItem('wsap_contacts', JSON.stringify(contacts)); }, [contacts]);
   useEffect(() => { localStorage.setItem('wsap_history',  JSON.stringify(history));  }, [history]);
   useEffect(() => { localStorage.setItem('wsap_settings', JSON.stringify(settings)); }, [settings]);
+  useEffect(() => { localStorage.setItem('wsap_auth',     JSON.stringify(auth));     }, [auth]);
 
   // ── Backend handshake + initial sync ─────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    let syncedOnce = false;
+
+    const checkBackend = async () => {
       const ok = await tryApi(() => api.health(), null);
-      if (cancelled || !ok?.ok) return;
-      setBackendOnline(true);
-      const [rc, rh] = await Promise.all([
-        tryApi(() => api.getContacts(), null),
-        tryApi(() => api.getHistory(),  null),
-      ]);
-      if (rc) setContacts(rc);
-      if (rh) setHistory(rh);
-    })();
-    return () => { cancelled = true; };
+      if (cancelled) return;
+
+      if (ok?.ok) {
+        setBackendOnline(true);
+        if (!syncedOnce) {
+          syncedOnce = true;
+          const [rc, rh] = await Promise.all([
+            tryApi(() => api.getContacts(), null),
+            tryApi(() => api.getHistory(),  null),
+          ]);
+          if (cancelled) return;
+          if (rc) setContacts(rc);
+          if (rh) setHistory(rh);
+        }
+      } else {
+        setBackendOnline(false);
+      }
+    };
+
+    checkBackend(); // check immediately on mount
+    const interval = setInterval(checkBackend, 5000); // then keep retrying, so we recover if the backend starts late or restarts
+
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   // ── Contacts ─────────────────────────────────────────────────────────────
@@ -251,6 +268,30 @@ export function AppProvider({ children }) {
 
   const updateSettings = useCallback((patch) => setSettings((p) => ({ ...p, ...patch })), []);
 
+  // ── Auth (mock — no database yet) ────────────────────────────────────────
+  // TODO: once the backend has real user storage, replace the body of `login`
+  // with a call to POST /api/auth/login and keep the same return shape
+  // ({ ok, error? }) so the Login page doesn't need to change.
+  const login = useCallback(({ email, password, role }) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+          resolve({ ok: false, error: 'Enter a valid email address.' });
+          return;
+        }
+        if (!password || password.length < 6) {
+          resolve({ ok: false, error: 'Password must be at least 6 characters.' });
+          return;
+        }
+        const name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        setAuth({ email, name, role, loggedInAt: new Date().toISOString() });
+        resolve({ ok: true });
+      }, 700 + Math.random() * 500); // simulated network latency
+    });
+  }, []);
+
+  const logout = useCallback(() => setAuth(null), []);
+
   return (
     <AppContext.Provider value={{
       contacts, addContact, removeContact,
@@ -260,6 +301,7 @@ export function AppProvider({ children }) {
       settings, updateSettings,
       checkIn, startCheckIn, confirmSafeArrival,
       recording, backendOnline,
+      auth, login, logout,
     }}>
       {children}
     </AppContext.Provider>

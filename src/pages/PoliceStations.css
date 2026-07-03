@@ -1,7 +1,27 @@
 .ps { padding: 56px 0 90px; min-height: 80vh; }
 .ps__head { max-width: 600px; margin-bottom: 28px; }
 .ps__head h1 { font-size: clamp(1.7rem, 3vw, 2.2rem); color: var(--text); margin: 10px 0 14px; }
-.ps__maps-link { margin-bottom: 32px; }
+
+.ps__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.ps__locate-btn { display: inline-flex; align-items: center; gap: 8px; }
+.ps__maps-link { display: inline-flex; align-items: center; gap: 8px; }
+
+.ps__live-note {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.82rem; color: var(--safe);
+  background: var(--safe-dim); border: 1px solid #00e0b840;
+  border-radius: 10px; padding: 10px 14px;
+  margin-bottom: 28px; max-width: 640px;
+}
+
+.ps__out-of-range {
+  background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: 14px; padding: 20px 22px; margin-bottom: 48px;
+  font-size: 0.88rem; color: var(--text-muted); max-width: 640px;
+}
+.ps__out-of-range strong { color: var(--text); }
+
+.ps__map { margin-bottom: 32px; }
 
 .ps__list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 48px; }
 .ps__item {

@@ -47,7 +47,7 @@
 
 .sosc__btn-wrap { position: relative; width: 168px; height: 168px; display: flex; align-items: center; justify-content: center; }
 
-.sosc__ring-progress { position: absolute; inset: 0; transform: rotate(-90deg); }
+.sosc__ring-progress { position: absolute; inset: 0; transform: rotate(-90deg); pointer-events: none; }
 .sosc__ring-track { fill: none; stroke: var(--surface-border); stroke-width: 5; }
 .sosc__ring-fill {
   fill: none;
