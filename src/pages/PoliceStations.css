@@ -21,6 +21,10 @@
 }
 .ps__out-of-range strong { color: var(--text); }
 
+.ps__status-note { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; color: var(--text-muted); margin-bottom: 32px; }
+.ps__spin { animation: psSpin 0.9s linear infinite; color: var(--safe); }
+@keyframes psSpin { to { transform: rotate(360deg); } }
+
 .ps__map { margin-bottom: 32px; }
 
 .ps__list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 48px; }

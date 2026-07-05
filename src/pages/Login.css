@@ -210,6 +210,14 @@
   margin-top: 16px;
   line-height: 1.5;
 }
+.login__demo-hint strong { color: var(--text-muted); }
+.login__prefill {
+  color: var(--safe);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.login__prefill:hover { color: var(--text); }
 
 /* ── Already-signed-in state ──────────────────────────────────────────────── */
 .login__card--session {

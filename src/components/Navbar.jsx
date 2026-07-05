@@ -26,6 +26,7 @@ export default function Navbar() {
     { to: '/sos', label: 'SOS Center' },
     { to: '/walk-with-me', label: 'Walk With Me' },
     { to: '/police-stations', label: 'Nearby Help' },
+    { to: '/routes/rate', label: 'Route Safety' },
     { to: '/settings', label: 'Settings' },
   ];
 
@@ -76,6 +77,11 @@ export default function Navbar() {
 
           {auth ? (
             <div className="nav__account">
+              {auth.role === 'admin' && (
+                <NavLink to="/admin" className="nav__link" onClick={() => setOpen(false)}>
+                  Admin Panel
+                </NavLink>
+              )}
               <span className="nav__account-badge" title={auth.email}>
                 {auth.role === 'admin' ? <ShieldCheck size={13} /> : <UserIcon size={13} />}
                 {auth.name}

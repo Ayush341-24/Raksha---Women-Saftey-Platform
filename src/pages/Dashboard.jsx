@@ -65,6 +65,8 @@ export default function Dashboard() {
               pulse={sosActive}
               height={200}
               zoom={14}
+              status={geoStatus}
+              onRetry={requestLiveLocation}
             />
           </div>
 
@@ -109,7 +111,7 @@ export default function Dashboard() {
                 <tbody>
                   {history.map((h) => (
                     <tr key={h.id}>
-                      <td>{h.type}</td>
+                      <td>{h.type}{h.note && <span className="dash__note">{h.note}</span>}</td>
                       <td>{h.location}</td>
                       <td>{new Date(h.time).toLocaleString()}</td>
                       <td><span className="dash__badge">{h.status}</span></td>

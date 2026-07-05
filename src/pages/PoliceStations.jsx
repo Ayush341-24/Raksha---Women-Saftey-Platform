@@ -1,47 +1,40 @@
-import { Building2, Navigation, Phone, LocateFixed, MapPinned } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Building2, Navigation, Phone, LocateFixed, MapPinned, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import LiveMap from '../components/LiveMap';
+import { nearestStations, fetchNearbyPoliceStations } from '../data/policeStations';
 import './PoliceStations.css';
-
-// Demo dataset with real-world coordinates — in production this list would come from
-// a Places API queried live against the user's coordinates instead of being static.
-const STATIONS = [
-  { name: 'Connaught Place Police Station', lat: 28.6315, lng: 77.2167, phone: '+91 11 2334 1234' },
-  { name: 'Parliament Street Police Station', lat: 28.6229, lng: 77.2100, phone: '+91 11 2336 5678' },
-  { name: 'Mandir Marg Police Station', lat: 28.6249, lng: 77.2003, phone: '+91 11 2336 9012' },
-  { name: "Women's Help Desk — North District", lat: 28.7041, lng: 77.1025, phone: '1091' },
-];
-
-// Haversine distance in km between two lat/lng points.
-function distanceKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
 
 export default function PoliceStations() {
   const { location, geoStatus, requestLiveLocation } = useApp();
   const mapsQuery = encodeURIComponent(
-    'police station near ' + (location.live ? `${location.lat},${location.lng}` : location.label)
+    'police station near ' + (location.live ? `${location.lat},${location.lng}` : 'me')
   );
 
-  // Once we have the user's real coordinates, rank the demo stations by actual distance
-  // from them rather than showing the fixed Delhi-based figures.
-  const stationsWithDistance = STATIONS.map((s) => ({
-    ...s,
-    km: location.live ? distanceKm(location.lat, location.lng, s.lat, s.lng) : null,
-  }));
-  if (location.live) stationsWithDistance.sort((a, b) => a.km - b.km);
+  // Real coordinates get a real answer: query OpenStreetMap for actual nearby police
+  // stations. Round to ~100m so re-renders don't refire the network call needlessly.
+  const roundedLat = useMemo(() => (Number.isFinite(location.lat) ? Math.round(location.lat * 1000) / 1000 : null), [location.lat]);
+  const roundedLng = useMemo(() => (Number.isFinite(location.lng) ? Math.round(location.lng * 1000) / 1000 : null), [location.lng]);
+  const [liveStations, setLiveStations] = useState(null);
+  const [stationsLoading, setStationsLoading] = useState(false);
+  const [stationsError, setStationsError] = useState(null);
 
-  // If the live location is nowhere near this demo dataset (>40km), the list below stops
-  // being meaningful — the honest move is to point the user at the real map search instead
-  // of showing misleading nearby-sounding entries for a city they aren't in.
-  const nearestKm = location.live ? stationsWithDistance[0].km : null;
-  const demoDataOutOfRange = location.live && nearestKm > 40;
+  useEffect(() => {
+    if (!location.live || roundedLat == null || roundedLng == null) { setLiveStations(null); setStationsError(null); return; }
+    let cancelled = false;
+    setStationsLoading(true);
+    setStationsError(null);
+    fetchNearbyPoliceStations(roundedLat, roundedLng)
+      .then((stations) => { if (!cancelled) setLiveStations(stations); })
+      .catch(() => { if (!cancelled) setStationsError("Couldn't reach live station data"); })
+      .finally(() => { if (!cancelled) setStationsLoading(false); });
+    return () => { cancelled = true; };
+  }, [location.live, roundedLat, roundedLng]);
+
+  // Only used as a last resort — when location access is actually denied/unsupported,
+  // not while we're merely still waiting on a real fix.
+  const demoStations = useMemo(() => nearestStations(location.lat, location.lng, false).slice(0, 4), [location.lat, location.lng]);
+  const showDemoFallback = !location.live && (geoStatus === 'denied' || geoStatus === 'unsupported');
 
   return (
     <section className="ps">
@@ -50,13 +43,12 @@ export default function PoliceStations() {
           <span className="how__eyebrow">Nearby help</span>
           <h1>Police stations & help desks near you</h1>
           <p>
-            Based on {location.live ? 'your live location' : location.label}. Distances are
-            approximate.
+            {location.live ? 'Based on your live location.' : 'Waiting for your location…'} Distances are approximate.
           </p>
         </div>
 
         <div className="ps__actions">
-          <button className="btn btn--ghost ps__locate-btn" onClick={requestLiveLocation}>
+          <button className="btn btn--ghost ps__locate-btn" onClick={requestLiveLocation} disabled={geoStatus === 'locating'}>
             <LocateFixed size={16} />
             {geoStatus === 'live'
               ? 'Refresh my live location'
@@ -80,9 +72,8 @@ export default function PoliceStations() {
         {location.live && (
           <p className="ps__live-note">
             <MapPinned size={13} />
-            Showing distances from your live position
-            {location.accuracy ? ` (±${Math.round(location.accuracy)}m accuracy)` : ''}. Map
-            search opens results centered on your exact coordinates.
+            Showing real police stations from OpenStreetMap near your live position
+            {location.accuracy ? ` (±${Math.round(location.accuracy)}m accuracy)` : ''}.
           </p>
         )}
 
@@ -94,40 +85,78 @@ export default function PoliceStations() {
             live={location.live}
             pulse={location.live}
             height={280}
+            status={geoStatus}
+            onRetry={requestLiveLocation}
             markers={
-              demoDataOutOfRange
-                ? []
-                : stationsWithDistance.map((s) => ({ key: s.name, lat: s.lat, lng: s.lng, label: s.name }))
+              location.live && liveStations
+                ? liveStations.map((s) => ({ key: `${s.lat},${s.lng}`, lat: s.lat, lng: s.lng, label: s.name }))
+                : showDemoFallback
+                  ? demoStations.map((s) => ({ key: s.name, lat: s.lat, lng: s.lng, label: s.name }))
+                  : []
             }
           />
         </div>
 
-        {demoDataOutOfRange ? (
-          <div className="ps__out-of-range">
-            <p>
-              The stations listed below are demo entries near New Delhi, and your live location
-              is about {Math.round(nearestKm)} km from there — too far for these numbers to mean
-              anything. Use <strong>Open full map search</strong> above for real stations near
-              you.
-            </p>
-          </div>
+        {location.live ? (
+          stationsLoading ? (
+            <p className="ps__status-note"><Loader2 size={14} className="ps__spin" /> Looking up police stations near you…</p>
+          ) : stationsError ? (
+            <div className="ps__out-of-range">
+              <p>{stationsError} — call <strong>112</strong> (emergency) or <strong>1091</strong> (women's helpline), or use <strong>Open full map search</strong> above.</p>
+            </div>
+          ) : liveStations && liveStations.length ? (
+            <>
+              <ul className="ps__list">
+                {liveStations.map((s) => (
+                  <li key={`${s.lat},${s.lng}`} className="ps__item">
+                    <div className="ps__icon">
+                      <Building2 size={20} />
+                    </div>
+                    <div className="ps__meta">
+                      <strong>{s.name}</strong>
+                      <span>{s.km.toFixed(1)} km away</span>
+                    </div>
+                    <a className="ps__call" href={`tel:${s.phone || '112'}`}>
+                      <Phone size={14} /> {s.phone ? 'Call' : 'Call 112'}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className="ps__status-note">Numbers come from OpenStreetMap where listed — if a station has none on record, its call button dials 112 instead.</p>
+            </>
+          ) : (
+            <div className="ps__out-of-range">
+              <p>No police stations listed on OpenStreetMap within 15 km of your position — call <strong>112</strong> (all-India emergency) or <strong>1091</strong> (women's helpline), or use <strong>Open full map search</strong> above.</p>
+            </div>
+          )
+        ) : showDemoFallback ? (
+          <>
+            <div className="ps__out-of-range">
+              <p>
+                Location access isn't available, so the list below is a demo set near New Delhi —
+                not stations near you. Enable location and retry, or use <strong>Open full map
+                search</strong> above.
+              </p>
+            </div>
+            <ul className="ps__list">
+              {demoStations.map((s) => (
+                <li key={s.name} className="ps__item">
+                  <div className="ps__icon">
+                    <Building2 size={20} />
+                  </div>
+                  <div className="ps__meta">
+                    <strong>{s.name}</strong>
+                    <span>Demo entry</span>
+                  </div>
+                  <a className="ps__call" href={`tel:${s.phone}`}>
+                    <Phone size={14} /> Call
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </>
         ) : (
-          <ul className="ps__list">
-            {stationsWithDistance.map((s) => (
-              <li key={s.name} className="ps__item">
-                <div className="ps__icon">
-                  <Building2 size={20} />
-                </div>
-                <div className="ps__meta">
-                  <strong>{s.name}</strong>
-                  <span>{s.km !== null ? `${s.km.toFixed(1)} km away` : 'Demo distance — enable live location for accuracy'}</span>
-                </div>
-                <a className="ps__call" href={`tel:${s.phone}`}>
-                  <Phone size={14} /> Call
-                </a>
-              </li>
-            ))}
-          </ul>
+          <p className="ps__status-note"><Loader2 size={14} className="ps__spin" /> Waiting for your location to look up nearby stations…</p>
         )}
 
         <div className="ps__helplines">

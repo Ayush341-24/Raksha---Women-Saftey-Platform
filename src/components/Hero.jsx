@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { ArrowRight, MapPin, Radio } from 'lucide-react';
 import './Hero.css';
 
 export default function Hero() {
   const [pressed, setPressed] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <section className="hero">
@@ -57,7 +58,8 @@ export default function Hero() {
               onMouseDown={() => setPressed(true)}
               onMouseUp={() => setPressed(false)}
               onMouseLeave={() => setPressed(false)}
-              aria-label="SOS demo button"
+              onClick={() => navigate('/sos')}
+              aria-label="Go to SOS Center — hold the button there to send an alert"
             >
               SOS
             </button>

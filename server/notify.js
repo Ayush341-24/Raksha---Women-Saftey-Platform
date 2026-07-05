@@ -29,8 +29,9 @@ export async function notifyContact(contact, alert) {
     `📍 Location: ${alert.locationLabel}\n` +
     `🗺️ Map: ${mapsUrl}\n` +
     `⏰ Time: ${triggeredAt}\n` +
-    `🔔 Triggered by: ${alert.triggeredBy}\n\n` +
-    `Reply SAFE to this number once they've confirmed they are okay.`;
+    `🔔 Triggered by: ${alert.triggeredBy}\n` +
+    (alert.note ? `📝 ${alert.note}\n` : '') +
+    `\nReply SAFE to this number once they've confirmed they are okay.`;
 
   if (client) {
     try {

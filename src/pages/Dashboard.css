@@ -70,6 +70,8 @@
 .dash__table td { padding: 12px 0; border-top: 1px solid var(--surface-border); color: var(--text-muted); }
 .dash__table tr:first-child td { border-top: none; }
 
+.dash__note { display: block; font-size: 0.74rem; color: var(--text-faint); margin-top: 2px; font-style: italic; }
+
 .dash__badge {
   font-family: var(--font-mono); font-size: 0.74rem; text-transform: capitalize;
   background: var(--safe-dim); color: var(--safe); padding: 4px 10px; border-radius: 999px;

@@ -7,6 +7,9 @@ import {
 import { useApp } from '../context/AppContext';
 import './Login.css';
 
+const ADMIN_DEMO_EMAIL = 'admin@rakshalink.app';
+const ADMIN_DEMO_PASSWORD = 'Admin@123';
+
 const ROLES = [
   { id: 'user', label: 'User', icon: User, blurb: 'Access your safety circle, SOS Center, and live location tools.' },
   { id: 'admin', label: 'Admin', icon: ShieldCheck, blurb: 'Monitor alerts, manage help desks, and oversee the platform.' },
@@ -46,7 +49,7 @@ export default function Login() {
     }
 
     setStatus('success');
-    setTimeout(() => navigate('/dashboard'), 650);
+    setTimeout(() => navigate(role === 'admin' ? '/admin' : '/dashboard'), 650);
   };
 
   // Already signed in — offer to continue or switch accounts instead of re-showing the form.
@@ -64,8 +67,8 @@ export default function Login() {
           <h1>Welcome back, {auth.name}</h1>
           <p>You're signed in as <strong>{auth.role === 'admin' ? 'Admin' : 'User'}</strong>.</p>
           <div className="login__session-actions">
-            <button className="btn btn--primary" onClick={() => navigate('/dashboard')}>
-              Continue to dashboard <ArrowRight size={16} />
+            <button className="btn btn--primary" onClick={() => navigate(auth.role === 'admin' ? '/admin' : '/dashboard')}>
+              {auth.role === 'admin' ? 'Go to admin panel' : 'Continue to dashboard'} <ArrowRight size={16} />
             </button>
             <button className="btn btn--ghost" onClick={logout}>
               <LogOut size={15} /> Log out &amp; switch account
@@ -164,9 +167,27 @@ export default function Login() {
             )}
           </button>
 
+          {role === 'admin' ? (
+            <p className="login__demo-hint">
+              Demo admin account — <strong>{ADMIN_DEMO_EMAIL}</strong> / <strong>{ADMIN_DEMO_PASSWORD}</strong>.
+              {' '}
+              <button
+                type="button"
+                className="login__prefill"
+                onClick={() => { setEmail(ADMIN_DEMO_EMAIL); setPassword(ADMIN_DEMO_PASSWORD); }}
+              >
+                Fill in
+              </button>
+            </p>
+          ) : (
+            <p className="login__demo-hint">
+              New here? <Link to="/register" className="login__prefill">Create a user account</Link> to save your
+              contacts and history to the server.
+            </p>
+          )}
           <p className="login__demo-hint">
-            Demo mode — no database connected yet. Any email + a 6-character password will sign
-            you in as the selected role.
+            If the server is unreachable, sign-in falls back to a local demo mode — any email and a
+            6-character password will work.
           </p>
         </form>
       </div>
