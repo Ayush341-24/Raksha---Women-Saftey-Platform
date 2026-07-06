@@ -24,14 +24,10 @@ export async function notifyContact(contact, alert) {
   const triggeredAt = new Date(alert.time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
   const message =
-    `🚨 EMERGENCY ALERT from RakshaLink\n` +
-    `Someone in your trusted circle may need help.\n\n` +
-    `📍 Location: ${alert.locationLabel}\n` +
-    `🗺️ Map: ${mapsUrl}\n` +
-    `⏰ Time: ${triggeredAt}\n` +
-    `🔔 Triggered by: ${alert.triggeredBy}\n` +
-    (alert.note ? `📝 ${alert.note}\n` : '') +
-    `\nReply SAFE to this number once they've confirmed they are okay.`;
+    `RakshaLink ALERT: Someone in your trusted circle may need help.\n` +
+    `Loc: ${mapsUrl}\n` +
+    `Time: ${triggeredAt}\n` +
+    `Reply SAFE once confirmed okay.`;
 
   if (client) {
     try {
